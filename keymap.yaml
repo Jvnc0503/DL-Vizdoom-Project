@@ -1,26 +1,29 @@
 keyboard:
-  # Movimiento (doble mapeo: flechas y WASD)
-  UP: MOVE_FORWARD
+  # Sourceport-ish:
+  # - WASD: moverse (W/S adelante/atrás, A/D strafe)
+  # - Flechas: girar la vista (izq/der)
+  # - SHIFT: disparar
+  # - E: interactuar/usar
+
+  # Movimiento
   W: MOVE_FORWARD
-
-  DOWN: MOVE_BACKWARD
   S: MOVE_BACKWARD
+  A: MOVE_LEFT
+  D: MOVE_RIGHT
 
+  # Girar (vista)
   LEFT: TURN_LEFT
-  A: TURN_LEFT
-
   RIGHT: TURN_RIGHT
-  D: TURN_RIGHT
 
   # Disparar
-  CTRL: ATTACK
-  Q: ATTACK
+  SHIFT: ATTACK
 
   # Usar / Abrir puertas / Palancas
+  E: USE
   SPACE: USE
 
-  # Correr (mantener presionado)
-  SHIFT: SPEED
+  # Correr (mantener presionado) - opcional
+  CTRL: SPEED
 
   # Selección de arma (si el escenario lo permite)
   "1": SELECT_WEAPON1

@@ -38,7 +38,16 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     },
     "controls": {
         # Orden de botones (vector MultiBinary)
-        "buttons": ["MOVE_FORWARD", "MOVE_BACKWARD", "TURN_LEFT", "TURN_RIGHT", "ATTACK"],
+        "buttons": [
+            "MOVE_FORWARD",
+            "MOVE_BACKWARD",
+            "MOVE_LEFT",
+            "MOVE_RIGHT",
+            "TURN_LEFT",
+            "TURN_RIGHT",
+            "ATTACK",
+            "USE",
+        ],
         # Variables de juego que se guardaran en obs["gamevariables"]
         "game_variables": ["HEALTH", "AMMO2", "KILLCOUNT"],
     },
