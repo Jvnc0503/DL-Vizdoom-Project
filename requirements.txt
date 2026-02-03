@@ -1,0 +1,9 @@
+vizdoom
+gymnasium
+pyyaml
+pillow
+pynput
+pyarrow
+fastparquet
+opencv-python
+imageio

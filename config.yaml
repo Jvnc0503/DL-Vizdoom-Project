@@ -1,0 +1,58 @@
+scenario:
+  doom_scenario_path: "scenarios/basic.wad"    # Ruta al .wad del escenario
+  doom_map: "map01"                            # Nivel dentro del WAD
+  doom_skill: 3                                # 1 (fácil) ... 5 (difícil)
+  episode_timeout_tics: 2100                   # ~60s a 35Hz (0 = sin límite)
+  episode_start_tics: 10                       # Delay inicial antes de acciones
+  seed: 12345                                  # Para reproducibilidad
+
+render:
+  visible_window: true                         # true = mostrar ventana
+                                               # false = headless (más rápido)
+  screen_resolution: "RES_320X240"             
+  screen_format: "RGB24"                       
+  render_hud: false                            # HUD, no necesario para dataset
+  render_crosshair: false
+  render_decals: false
+  render_particles: false
+
+  # Buffers opcionales
+  automap_buffer_enabled: false
+  depth_buffer_enabled: false
+  labels_buffer_enabled: false
+
+  audio_enabled: false                        # No nos interesa sonido. Tal vez en la presentacion final
+
+controls:
+  # Orden CANÓNICO de los botones (define el vector de acción MultiBinary)
+  buttons:
+    - MOVE_FORWARD
+    - MOVE_BACKWARD
+    - TURN_LEFT
+    - TURN_RIGHT
+    - ATTACK
+
+  # Variables guardas en obs["gamevariables"]
+  game_variables:
+    - HEALTH
+    - AMMO2
+    - KILLCOUNT
+
+timing:
+  frame_skip: 4              # step(action) aplicará acción por 4 tics
+  realtime_lock: false       # true = doom "en tiempo real" 35Hz (modo humano)
+  target_hz: 35              # Doom original corre a ~35Hz
+
+reward:
+  living_reward: 0.0
+  death_penalty: 0.0
+
+recording:
+  enable_lmp: true                   # true = grabar .lmp nativo de Doom
+  output_dir: "recordings"           # Carpeta base de episodios
+  dump_obs_every_k_tics: 1           # Guardar cada tic
+  enable_png_frames: true            # true = guardar PNGs (pesado, solo debugging)
+
+safety:
+  max_episode_seconds: 0             # 0 = sin tope de tiempo real
+  action_timeout_ms: 0               # 0 = no usar timeout

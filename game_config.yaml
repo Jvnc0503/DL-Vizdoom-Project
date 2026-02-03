@@ -1,0 +1,105 @@
+scenario:
+  # scenarios/basic.wad
+  # scenarios/deadly_corridor.wad
+  # scenarios/deathmatch.wad
+  # scenarios/defend_the_center.wad
+  # scenarios/defend_the_line.wad
+  # scenarios/health_gathering_supreme.wad
+  # scenarios/health_gathering.wad
+  # scenarios/multi_deathmatch.wad
+  # scenarios/my_way_home.wad
+  # scenarios/predict_position.wad
+  # scenarios/rocket_basic.wad
+  # scenarios/simpler_basic.wad
+  # scenarios/take_cover.wad
+  doom_scenario_path: "scenarios/defend_the_center.wad"   # Ajusta si usas otro WAD
+  doom_map: "map01"
+  doom_skill: 3                 # 1 I'm Too Young To Die (muy fácil)
+                                # 2 Hey, Not Too Rough (fácil)
+                                # 3 Hurt Me Plenty (normal)
+                                # 4 Ultra-Violence (difícil)
+                                # 5 Nightmare! (muy difícil)
+  episode_timeout_tics: 0       # 0 = sin límite por tics (cierre automatico por victoria o muerte, o porque tu lo decidiste)
+  episode_start_tics: 10
+  seed: 0
+
+render:
+  visible_window: true 
+  screen_resolution: "RES_320X240"
+  screen_format: "RGB24"
+  render_hud: true
+  render_crosshair: true
+  render_decals: true
+  render_particles: true
+
+  automap_buffer_enabled: false
+  depth_buffer_enabled: true 
+  labels_buffer_enabled: true
+
+  audio_enabled: false 
+
+controls:
+  # Orden de los botones
+  buttons:
+    - MOVE_FORWARD
+    - MOVE_BACKWARD
+    - TURN_LEFT
+    - TURN_RIGHT
+    - ATTACK
+    - USE
+    - SPEED
+    - SELECT_WEAPON1
+    - SELECT_WEAPON2
+    - SELECT_WEAPON3
+    - SELECT_WEAPON4
+    - SELECT_WEAPON5
+    - SELECT_WEAPON6
+    - SELECT_WEAPON7
+
+  # Variables de juego expuestas
+  game_variables:
+    - HEALTH
+    - ARMOR
+    - KILLCOUNT
+    - SELECTED_WEAPON
+    - SELECTED_WEAPON_AMMO
+    - AMMO1
+    - AMMO2
+    - AMMO3
+    - AMMO4
+    - WEAPON1
+    - WEAPON2
+    - WEAPON3
+    - WEAPON4
+    - WEAPON5
+    - WEAPON6
+    - WEAPON7
+
+timing:
+  frame_skip: 1                  # 1 tic por acción (35 Hz verdadero)
+  realtime_lock: true            # en realidad lo manejamos en el script
+  target_hz: 35
+
+reward:
+  living_reward: 0.0
+  death_penalty: 0.0
+
+recording:
+  enable_lmp: false              # El script guarda su propio dataset; .lmp no es necesario
+  output_dir: "recordings"
+  dump_obs_every_k_tics: 1
+  enable_png_frames: false       # Ignorado por doom_play.py; decidimos la grabación mediante un flag
+
+  video_backend: "ffmpeg"        # "ffmpeg" | "opencv" | "npz"
+  video_container: "mkv"         # "mkv" | "mp4"
+  video_codec: "libx264"         # "libx264" | "libx265" | "ffv1" | "prores_ks" | "libvpx-vp9"
+  video_crf: 4                   # 0 = lossless; más bajo = mejor calidad
+  video_preset: "veryfast"       # ultrafast/veryfast/faster/medium/...
+  video_fps: 35.0                # Igual que el juego
+
+  chunk_size: 350
+  queue_maxsize: 256
+
+safety:
+  max_episode_seconds: 0
+  action_timeout_ms: 0
