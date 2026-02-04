@@ -37,7 +37,7 @@ VIDEO_BACKEND_DEFAULT = "ffmpeg"      # "ffmpeg" | "opencv" | "npz"
 VIDEO_CONTAINER_DEFAULT = "mkv"       # "mkv" | "mp4"
 VIDEO_CODEC_DEFAULT = "libx264"       # ffmpeg: "libx264" | "libx265" | "ffv1" | "prores_ks" | "libvpx-vp9"
 VIDEO_CRF_DEFAULT = 18                # 0 = lossless, 18 se ve bien
-VIDEO_PRESET_DEFAULT = "veryfast"     # x264: ultrafast/veryfast/...
+VIDEO_PRESET_DEFAULT = "medium"     # x264: ultrafast/superfast/veryfast/faster/fast/medium/slow/slower/veryslow/placebo
 CHUNK_SIZE_DEFAULT = 350
 QUEUE_MAXSIZE_DEFAULT = 256
 
