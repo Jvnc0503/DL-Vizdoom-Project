@@ -22,7 +22,7 @@ keyboard:
   E: USE
 
   # Correr (mantener presionado) - opcional
-  CTRL: SPEED
+  SHIFT: SPEED
 
   # Selección de arma (si el escenario lo permite)
   "1": SELECT_WEAPON1
