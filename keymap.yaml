@@ -16,11 +16,10 @@ keyboard:
   RIGHT: TURN_RIGHT
 
   # Disparar
-  SHIFT: ATTACK
+  SPACE: ATTACK
 
   # Usar / Abrir puertas / Palancas
   E: USE
-  SPACE: USE
 
   # Correr (mantener presionado) - opcional
   CTRL: SPEED
