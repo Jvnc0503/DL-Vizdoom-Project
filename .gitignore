@@ -1,3 +1,6 @@
 __pycache__/
 _vizdoom/
 .conda/
+_vizdoom.ini
+doom.wad
+doom2.wad
