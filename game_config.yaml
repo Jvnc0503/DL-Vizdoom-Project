@@ -12,8 +12,8 @@ scenario:
   # scenarios/rocket_basic.wad
   # scenarios/simpler_basic.wad
   # scenarios/take_cover.wad
-  doom_scenario_path: "scenarios/defend_the_center.wad"   # Ajusta si usas otro WAD
-  doom_map: "map01"
+  doom_scenario_path: "scenarios/doom.wad"   # Ajusta si usas otro WAD
+  doom_map: "e1m1"  # "e1m1" "map01"
   doom_skill: 3                 # 1 I'm Too Young To Die (muy fácil)
                                 # 2 Hey, Not Too Rough (fácil)
                                 # 3 Hurt Me Plenty (normal)
