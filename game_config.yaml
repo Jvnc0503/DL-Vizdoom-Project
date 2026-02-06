@@ -83,8 +83,8 @@ timing:
   target_hz: 35
 
 reward:
-  living_reward: 1
-  death_penalty: 1000
+  living_reward: 0.01
+  death_penalty: 100
 
 recording:
   enable_lmp: false              # El script guarda su propio dataset; .lmp no es necesario
