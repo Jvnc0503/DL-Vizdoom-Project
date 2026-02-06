@@ -687,6 +687,23 @@ def main():
             obs, r, terminated, truncated, info = ctrl.step(action_vec, repeat=1)
             cumulative_reward += float(r)
 
+            # Registrar paso (incluyendo el paso final si terminó/truncó)
+            if recorder is not None:
+                recorder.enqueue_step(
+                    t_index=t_index,
+                    obs=obs,
+                    action_bin=action_vec,
+                    reward=r,
+                    terminated=terminated,
+                    truncated=truncated,
+                    lives=lives,
+                    reason=None,
+                    timestamp_s=(time.perf_counter() - next_t + period),
+                    doom_wad=doom_wad,
+                    doom_map=doom_map,
+                    doom_skill=doom_skill,
+                )
+
             if terminated or truncated:
                 if truncated:
                     terminal_reason = "timeout"
@@ -704,22 +721,6 @@ def main():
                             health_val = float(gv[gv_names.index("HEALTH")])
                         terminal_reason = "death" if (health_val is not None and health_val <= 0) else "success"
                 break
-
-            if recorder is not None:
-                recorder.enqueue_step(
-                    t_index=t_index,
-                    obs=obs,
-                    action_bin=action_vec,
-                    reward=r,
-                    terminated=terminated,
-                    truncated=truncated,
-                    lives=lives,
-                    reason=None,
-                    timestamp_s=(time.perf_counter() - next_t + period),
-                    doom_wad=doom_wad,
-                    doom_map=doom_map,
-                    doom_skill=doom_skill,
-                )
 
             t_index += 1
 
