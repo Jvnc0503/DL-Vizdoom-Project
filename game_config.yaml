@@ -83,8 +83,15 @@ timing:
   target_hz: 35
 
 reward:
-  living_reward: 0.01
-  death_penalty: 100
+  # Recompensas principales
+  living_reward: -0.02    # penaliza quedarse parado; empuja a completar el mapa
+  death_penalty: -500    # penaliza fuertemente morir
+
+  # Shaping rewards (señales intermedias)
+  kill_reward: 8.0        # recompensa por cada kill
+  pickup_health: 12.0    # recompensa por recoger salud (normalizada por 25 HP)
+  pickup_armor: 5.0      # recompensa por recoger armadura
+  level_clear_bonus: 250.0  # recompensa por completar el nivel
 
 recording:
   enable_lmp: false              # El script guarda su propio dataset; .lmp no es necesario

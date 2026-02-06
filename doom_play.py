@@ -642,6 +642,16 @@ def main():
     button_names = ctrl.button_names
     gv_names = ctrl.game_variable_names
 
+    # Reward shaping params (desde game_config.yaml)
+    rew_cfg = game_cfg.get("reward", {}) if isinstance(game_cfg, dict) else {}
+    kill_reward = float(rew_cfg.get("kill_reward", 0.0))
+    pickup_health_reward = float(rew_cfg.get("pickup_health", 0.0))
+    pickup_armor_reward = float(rew_cfg.get("pickup_armor", 0.0))
+    level_clear_bonus = float(rew_cfg.get("level_clear_bonus", 0.0))
+
+    # Estado anterior de gamevariables para computar deltas
+    prev_gv: Optional[Dict[str, float]] = None
+
     # Recorder (si esta activado)
     recorder: Optional[AsyncEpisodeRecorder] = None
     if args.record:
@@ -685,7 +695,57 @@ def main():
 
             # 1 tic por iteración -> 35 Hz reales
             obs, r, terminated, truncated, info = ctrl.step(action_vec, repeat=1)
-            cumulative_reward += float(r)
+
+            # Extraer gamevariables y calcular shaping (kills / pickups)
+            shaping_extra = 0.0
+            gv = obs.get("gamevariables", None)
+            current_gv: Dict[str, float] = {}
+            if isinstance(gv, np.ndarray):
+                vals = gv.reshape(-1).tolist()
+                for name, val in zip(gv_names, vals):
+                    current_gv[name] = float(val)
+
+            if prev_gv is not None and current_gv:
+                # Kills
+                if "KILLCOUNT" in current_gv and "KILLCOUNT" in prev_gv:
+                    delta_k = int(current_gv.get("KILLCOUNT", 0) - prev_gv.get("KILLCOUNT", 0))
+                    if delta_k > 0:
+                        shaping_extra += float(delta_k) * kill_reward
+                # Health pickups (only positive deltas)
+                if "HEALTH" in current_gv and "HEALTH" in prev_gv:
+                    delta_h = float(current_gv.get("HEALTH", 0.0) - prev_gv.get("HEALTH", 0.0))
+                    if delta_h > 0:
+                        # Normalizamos por 25 HP para que pickups pequeños no exploten
+                        shaping_extra += (delta_h / 25.0) * pickup_health_reward
+                # Armor pickups
+                if "ARMOR" in current_gv and "ARMOR" in prev_gv:
+                    delta_a = float(current_gv.get("ARMOR", 0.0) - prev_gv.get("ARMOR", 0.0))
+                    if delta_a > 0:
+                        shaping_extra += (delta_a / 25.0) * pickup_armor_reward
+
+            # Aplicar shaping al reward del paso
+            r = float(r) + shaping_extra
+
+            # Determinar motivo terminal localmente (para aplicar bonificación de nivel)
+            terminal_reason_local: Optional[str] = None
+            if terminated or truncated:
+                if truncated:
+                    terminal_reason_local = "timeout"
+                else:
+                    try:
+                        is_dead = bool(ctrl.game.is_player_dead())
+                    except Exception:
+                        is_dead = False
+                    if is_dead:
+                        terminal_reason_local = "death"
+                    else:
+                        health_val = None
+                        if isinstance(gv, np.ndarray) and "HEALTH" in gv_names:
+                            health_val = float(gv[gv_names.index("HEALTH")])
+                        terminal_reason_local = "death" if (health_val is not None and health_val <= 0) else "success"
+                # Si completó el nivel, añadir bonificación de final de nivel
+                if terminal_reason_local == "success" and level_clear_bonus != 0.0:
+                    r += float(level_clear_bonus)
 
             # Registrar paso (incluyendo el paso final si terminó/truncó)
             if recorder is not None:
@@ -697,29 +757,22 @@ def main():
                     terminated=terminated,
                     truncated=truncated,
                     lives=lives,
-                    reason=None,
+                    reason=terminal_reason_local,
                     timestamp_s=(time.perf_counter() - next_t + period),
                     doom_wad=doom_wad,
                     doom_map=doom_map,
                     doom_skill=doom_skill,
                 )
 
+            # Acumular recompensa (incluyendo shaping)
+            cumulative_reward += float(r)
+
+            # Actualizar prev_gv
+            if current_gv:
+                prev_gv = current_gv
+
             if terminated or truncated:
-                if truncated:
-                    terminal_reason = "timeout"
-                else:
-                    try:
-                        is_dead = bool(ctrl.game.is_player_dead())
-                    except Exception:
-                        is_dead = False
-                    if is_dead:
-                        terminal_reason = "death"
-                    else:
-                        health_val = None
-                        gv = obs.get("gamevariables", None)
-                        if isinstance(gv, np.ndarray) and "HEALTH" in gv_names:
-                            health_val = float(gv[gv_names.index("HEALTH")])
-                        terminal_reason = "death" if (health_val is not None and health_val <= 0) else "success"
+                terminal_reason = terminal_reason_local
                 break
 
             t_index += 1
