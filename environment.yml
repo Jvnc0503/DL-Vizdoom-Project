@@ -1,0 +1,16 @@
+name: doom
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - gymnasium
+  - pyyaml
+  - pillow
+  - pynput
+  - pyarrow
+  - fastparquet
+  - opencv
+  - imageio
+  - pip:
+    - vizdoom
