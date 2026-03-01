@@ -143,3 +143,9 @@ reward:
 ## Notas adicionales
 - Si tienes problemas instalando `vizdoom` o `opencv`, revisa que tu toolchain (compiladores, headers) esté instalado y que el entorno use `python 3.12`.
 - Para reproducibilidad, usa siempre `conda` y el archivo [environment.yml](environment.yml) incluido en este repositorio.
+
+## Aviso sobre assets, WADs y licencia
+- La carpeta [scenarios](scenarios) puede contener configuraciones y recursos de ejemplo de ViZDoom que son abiertos o libres de uso y redistribución para pruebas/entrenamiento.
+- Los IWADs/recursos comerciales (por ejemplo `doom.wad`, `doom2.wad`, `plutonia.wad`, `tnt.wad`, etc.) **no forman parte de la distribución del repositorio** y se omiten mediante reglas de ignore (por ejemplo en [.gitignore](.gitignore)).
+- Los archivos usados localmente para pruebas en este proyecto fueron extraídos desde una copia propia del juego adquirida legalmente.
+- Cualquier persona que clone este repositorio debe proveer sus propios assets/WADs con una licencia válida antes de ejecutar escenarios que los requieran.
