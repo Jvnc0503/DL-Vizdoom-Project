@@ -1,44 +1,41 @@
-# Vizdoom Project - Deep Learning (CS5364)
+# Vizdoom — Proyecto Deep Learning (CS5364)
 
 ## Dependencias
-Se recomienda encarecidamente usar **Python 3.12** con un environment de **Conda**, versiones posteriores (como 3.13 o 3.14) producen conflictos de librerías y errores al compilar las librerías opencv y/o vizdoom.
+Se recomienda usar **Python 3.12** en un entorno de **Conda**. Versiones posteriores (por ejemplo 3.13+) pueden provocar conflictos al compilar `opencv` o `vizdoom`.
 
-## Setup
+## Instalación y setup
 
-### Conda
-Creación y activación:
+### Conda (recomendado)
+Crear y actualizar el entorno desde [environment.yml](environment.yml):
 ```bash
 conda env create -f environment.yml && conda env update -f environment.yml --prune
 ```
+Activar el entorno:
 ```bash
 conda activate doom
 ```
-Borrar env:
+Eliminar el entorno:
 ```bash
 conda deactivate
-```
-```bash
 conda env remove --name doom
 ```
 
-### Venv
-**ADVERTENCIA**: Se desaconseja usar environments regulares porque no asegura compatibilidad entre versiones de dependencias.
+> Nota: [environment.yml](environment.yml) usa `conda-forge` como canal principal y especifica `python=3.12`.
+
+### Virtualenv (no recomendado)
+Se puede usar un `venv`, pero puede haber incompatibilidades de paquetes:
 ```bash
 python -m venv .venv
-```
-```bash
 source .venv/bin/activate
 ```
-Desactivar:
+Desactivar y eliminar:
 ```bash
 deactivate
-```
-```bash
 rm -rf .venv/
 ```
 
-## Control Mapping
-Se puede configurar la asignación de botones en el archivo [keymap.yaml](keymap.yaml)
+## Mapeo de controles
+Configura las teclas en [keymap.yaml](keymap.yaml). Ejemplo de mapeo:
 ```yaml
 W: MOVE_FORWARD
 S: MOVE_BACKWARD
@@ -60,19 +57,89 @@ ESCAPE: QUIT
 ```
 
 ## Ejecución
-Modo de juego normal:
+Modo de juego (normal):
 ```bash
 python doom_play.py --config game_config.yaml --keymap keymap.yaml
 ```
-Modo de grabación:
+
+Grabar partida:
 ```bash
 python doom_play.py --config game_config.yaml --keymap keymap.yaml --record
 ```
 
-## Rewards
-Se puede cambiar el peso de las recompensas en [game_config.yaml](game_config.yaml)
+## Selección de WAD, mapa y dificultad
+La selección se hace en `game_config.yaml`, dentro de la sección `scenario`:
+
+```yaml
+scenario:
+  doom_scenario_path: "scenarios/doom.wad"
+  doom_map: "e3m2"
+  doom_skill: 3
+```
+
+### 1) Elegir WAD (`doom_scenario_path`)
+- Define el archivo WAD que se cargará.
+- Ejemplos comunes en este repo: `scenarios/doom.wad`, `scenarios/doom2.wad`, `scenarios/plutonia.wad`, `scenarios/tnt.wad`.
+
+Ejemplo:
+```yaml
+scenario:
+  doom_scenario_path: "scenarios/doom2.wad"
+```
+
+### 2) Elegir mapa (`doom_map`)
+- En DOOM clásico se usan nombres tipo `E#M#` (por ejemplo `e1m1`, `e3m2`).
+- En DOOM II y algunos WADs modernos se usan nombres tipo `MAP##` (por ejemplo `map01`, `map07`).
+- Si un mapa no existe en el WAD seleccionado, la partida puede fallar al iniciar.
+
+Ejemplos:
+```yaml
+scenario:
+  doom_scenario_path: "scenarios/doom.wad"
+  doom_map: "e1m1"
+```
+
+```yaml
+scenario:
+  doom_scenario_path: "scenarios/doom2.wad"
+  doom_map: "map01"
+```
+
+### 3) Elegir dificultad (`doom_skill`)
+`doom_skill` va de `1` a `5`:
+- `1`: I'm Too Young To Die (muy fácil)
+- `2`: Hey, Not Too Rough (fácil)
+- `3`: Hurt Me Plenty (normal)
+- `4`: Ultra-Violence (difícil)
+- `5`: Nightmare! (muy difícil)
+
+Ejemplo (subir dificultad):
+```yaml
+scenario:
+  doom_skill: 4
+```
+
+### Configuración sugerida para empezar
+```yaml
+scenario:
+  doom_scenario_path: "scenarios/doom.wad"
+  doom_map: "e1m1"
+  doom_skill: 2
+```
+
+Después de cambiar estos valores, ejecuta normalmente:
+```bash
+python doom_play.py --config game_config.yaml --keymap keymap.yaml
+```
+
+## Recompensas
+Puedes ajustar pesos de recompensa en [game_config.yaml](game_config.yaml). Ejemplo:
 ```yaml
 reward:
   living_reward: -0.02
   death_penalty: -500
 ```
+
+## Notas adicionales
+- Si tienes problemas instalando `vizdoom` o `opencv`, revisa que tu toolchain (compiladores, headers) esté instalado y que el entorno use `python 3.12`.
+- Para reproducibilidad, usa siempre `conda` y el archivo [environment.yml](environment.yml) incluido en este repositorio.
