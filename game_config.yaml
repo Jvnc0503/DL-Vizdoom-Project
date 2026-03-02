@@ -102,7 +102,7 @@ recording:
   video_backend: "ffmpeg"        # "ffmpeg" | "opencv" | "npz"
   video_container: "mkv"         # "mkv" | "mp4"
   video_codec: "libx264"         # "libx264" | "libx265" | "ffv1" | "prores_ks" | "libvpx-vp9"
-  video_crf: 8                   # 0 = lossless; más bajo = mejor calidad
+  video_crf: 18                   # 0 = lossless; más bajo = mejor calidad
   video_preset: "veryslow"       # ultrafast/veryfast/faster/medium/...
   video_fps: 35.0                # Igual que el juego
 

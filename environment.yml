@@ -13,6 +13,7 @@ dependencies:
   - opencv
   - imageio
   - numpy
+  - pandas
   - tqdm
   - pip:
       - vizdoom

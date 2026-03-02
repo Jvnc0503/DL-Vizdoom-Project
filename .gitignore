@@ -4,6 +4,9 @@ _vizdoom/
 _vizdoom.ini
 recordings/
 .vscode/
+*.zip
+*.tar.gz
+*.7z
 
 # WADs
 doom.wad
