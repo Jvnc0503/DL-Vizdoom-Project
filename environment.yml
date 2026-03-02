@@ -4,7 +4,7 @@ channels:
 dependencies:
   - python=3.12
   - pip
-  - gymnasium
+  - gymnasium-all
   - pyyaml
   - pillow
   - pynput
@@ -12,5 +12,7 @@ dependencies:
   - fastparquet
   - opencv
   - imageio
+  - numpy
+  - tqdm
   - pip:
-    - vizdoom
+      - vizdoom
