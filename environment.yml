@@ -1,6 +1,7 @@
 name: doom
 channels:
   - conda-forge
+  - defaults
 dependencies:
   - python=3.12
   - pip
@@ -15,5 +16,7 @@ dependencies:
   - numpy
   - pandas
   - tqdm
+  - pytorch
+  - ipykernel
   - pip:
       - vizdoom
