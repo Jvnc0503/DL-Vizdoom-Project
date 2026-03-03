@@ -17,6 +17,9 @@ dependencies:
   - pandas
   - tqdm
   - pytorch
+  - torchvision
   - ipykernel
   - pip:
       - vizdoom
+      - timm
+      - ultralytics

@@ -7,3 +7,5 @@ pyarrow
 fastparquet
 opencv-python
 imageio
+timm
+ultralytics
