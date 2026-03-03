@@ -6,37 +6,53 @@ import torch
 import torch.nn as nn
 from torch.distributions import Bernoulli
 
+from common.vision_frontend import FrozenVisionFrontend
+
 
 class PPOActorCritic(nn.Module):
-    def __init__(self, num_actions: int, in_channels: int = 3) -> None:
+    def __init__(
+        self,
+        num_actions: int,
+        mobilenet_model_name: str = "mobilenetv4_conv_small.e2400_r224_in1k",
+        yolo_model_name: str = "yolo26s.pt",
+        yolo_imgsz: int = 320,
+        yolo_conf: float = 0.25,
+        yolo_max_det: int = 10,
+        use_yolo: bool = True,
+    ) -> None:
         super().__init__()
         self.num_actions = int(num_actions)
 
+        self.vision_frontend = FrozenVisionFrontend(
+            mobilenet_model_name=mobilenet_model_name,
+            yolo_model_name=yolo_model_name,
+            yolo_imgsz=yolo_imgsz,
+            yolo_conf=yolo_conf,
+            yolo_max_det=yolo_max_det,
+            use_yolo=use_yolo,
+        )
+
         self.encoder = nn.Sequential(
-            nn.Conv2d(in_channels, 32, kernel_size=8, stride=4),
+            nn.Linear(self.vision_frontend.output_dim, 256),
             nn.ReLU(inplace=True),
-            nn.Conv2d(32, 64, kernel_size=4, stride=2),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1),
-            nn.ReLU(inplace=True),
-            nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Flatten(),
+            nn.Dropout(p=0.1),
         )
 
         self.actor_head = nn.Sequential(
-            nn.Linear(64, 256),
+            nn.Linear(256, 256),
             nn.ReLU(inplace=True),
             nn.Dropout(p=0.2),
             nn.Linear(256, self.num_actions),
         )
         self.critic_head = nn.Sequential(
-            nn.Linear(64, 256),
+            nn.Linear(256, 256),
             nn.ReLU(inplace=True),
             nn.Linear(256, 1),
         )
 
     def encode(self, x: torch.Tensor) -> torch.Tensor:
-        return self.encoder(x)
+        z_frontend = self.vision_frontend(x)
+        return self.encoder(z_frontend)
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         features = self.encode(x)
@@ -78,12 +94,16 @@ def load_bc_weights_into_ppo(ppo_model: PPOActorCritic, bc_state_dict: Dict[str,
     mapped: Dict[str, torch.Tensor] = {}
 
     for key, tensor in bc_state_dict.items():
+        if key.startswith("vision_frontend."):
+            mapped[key] = tensor
+            continue
+
         if key.startswith("encoder."):
             mapped[key] = tensor
             continue
 
-        if key.startswith("head."):
-            suffix = key[len("head.") :]
+        if key.startswith("actor_head."):
+            suffix = key[len("actor_head.") :]
             mapped[f"actor_head.{suffix}"] = tensor
 
     ppo_model.load_state_dict(mapped, strict=False)

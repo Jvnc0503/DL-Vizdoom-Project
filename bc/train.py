@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import random
+import sys
 from datetime import datetime
 from typing import Any, Dict, Optional, Sequence, Tuple
 
@@ -12,6 +13,10 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 from bc.dataset import BCDataset, discover_sessions, split_sessions
 from bc.model import BCPolicyNet
@@ -232,6 +237,12 @@ def main() -> None:
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--threshold", type=float, default=0.5)
+    parser.add_argument("--mobilenet-model-name", type=str, default="mobilenetv4_conv_small.e2400_r224_in1k")
+    parser.add_argument("--yolo-model-name", type=str, default="yolo26s.pt")
+    parser.add_argument("--yolo-imgsz", type=int, default=320)
+    parser.add_argument("--yolo-conf", type=float, default=0.25)
+    parser.add_argument("--yolo-max-det", type=int, default=10)
+    parser.add_argument("--disable-yolo", action="store_true")
     parser.add_argument(
         "--max-pos-weight",
         type=float,
@@ -285,7 +296,15 @@ def main() -> None:
         pin_memory=(device.type == "cuda"),
     )
 
-    model = BCPolicyNet(num_actions=train_ds.num_actions).to(device)
+    model = BCPolicyNet(
+        num_actions=train_ds.num_actions,
+        mobilenet_model_name=args.mobilenet_model_name,
+        yolo_model_name=args.yolo_model_name,
+        yolo_imgsz=args.yolo_imgsz,
+        yolo_conf=args.yolo_conf,
+        yolo_max_det=args.yolo_max_det,
+        use_yolo=not bool(args.disable_yolo),
+    ).to(device)
 
     pos_weight = compute_pos_weight(train_ds, max_pos_weight=float(args.max_pos_weight)).to(device)
     criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
@@ -326,6 +345,12 @@ def main() -> None:
         "num_samples_val": len(val_ds),
         "button_names": train_ds.button_names,
         "image_size": int(args.image_size),
+        "mobilenet_model_name": str(args.mobilenet_model_name),
+        "yolo_model_name": str(args.yolo_model_name),
+        "yolo_imgsz": int(args.yolo_imgsz),
+        "yolo_conf": float(args.yolo_conf),
+        "yolo_max_det": int(args.yolo_max_det),
+        "use_yolo": bool(not args.disable_yolo),
         "threshold": float(args.threshold),
         "action_thresholds": None,
         "max_pos_weight": float(args.max_pos_weight),
@@ -411,6 +436,12 @@ def main() -> None:
                 "model_state_dict": model.state_dict(),
                 "button_names": train_ds.button_names,
                 "image_size": int(args.image_size),
+                "mobilenet_model_name": str(args.mobilenet_model_name),
+                "yolo_model_name": str(args.yolo_model_name),
+                "yolo_imgsz": int(args.yolo_imgsz),
+                "yolo_conf": float(args.yolo_conf),
+                "yolo_max_det": int(args.yolo_max_det),
+                "use_yolo": bool(not args.disable_yolo),
                 "threshold": float(args.threshold),
                 "action_thresholds": calibrated_thresholds,
                 "epoch": int(epoch),

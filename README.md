@@ -77,7 +77,7 @@ El flujo recomendado es:
 ### 1) Entrenar
 
 ```bash
-python train_bc.py --recordings-dir recordings --output-dir models --epochs 12 --batch-size 64 --val-ratio 0.2
+python bc/train.py --recordings-dir recordings --output-dir models --epochs 12 --batch-size 64 --val-ratio 0.2
 ```
 
 Esto crea una carpeta `models/bc_run_YYYYMMDD_HHMMSS/` con:
@@ -88,7 +88,7 @@ Esto crea una carpeta `models/bc_run_YYYYMMDD_HHMMSS/` con:
 ### 2) Jugar con el agente entrenado
 
 ```bash
-python play_bc.py --checkpoint models/bc_run_YYYYMMDD_HHMMSS/best.pt --config game_config.yaml
+python bc/play.py --checkpoint models/bc_run_YYYYMMDD_HHMMSS/best.pt --config game_config.yaml
 ```
 
 Opciones útiles:
@@ -109,7 +109,7 @@ Este flujo toma un modelo BC como punto de partida y luego lo optimiza con PPO e
 ### 1) Fine-tuning PPO desde BC
 
 ```bash
-python train_ppo.py --config game_config.yaml --bc-checkpoint models/bc_run_YYYYMMDD_HHMMSS/best.pt --output-dir models --total-timesteps 200000
+python ppo/train.py --config game_config.yaml --bc-checkpoint models/bc_run_YYYYMMDD_HHMMSS/best.pt --output-dir models --total-timesteps 200000
 ```
 
 Opciones útiles:
@@ -121,7 +121,7 @@ Opciones útiles:
 
 Ejemplo multi-escenario (round-robin):
 ```bash
-python train_ppo.py --config game_config.yaml --scenario-configs scenario_configs --switch-every-timesteps 50000 --bc-checkpoint models/bc_run_YYYYMMDD_HHMMSS/best.pt --output-dir models --total-timesteps 300000
+python ppo/train.py --config game_config.yaml --scenario-configs scenario_configs --switch-every-timesteps 50000 --bc-checkpoint models/bc_run_YYYYMMDD_HHMMSS/best.pt --output-dir models --total-timesteps 300000
 ```
 
 Esto crea una carpeta `models/ppo_run_YYYYMMDD_HHMMSS/` con:
@@ -133,7 +133,7 @@ Esto crea una carpeta `models/ppo_run_YYYYMMDD_HHMMSS/` con:
 ### 2) Ejecutar el agente PPO
 
 ```bash
-python play_ppo.py --checkpoint models/ppo_run_YYYYMMDD_HHMMSS/best.pt --config game_config.yaml
+python ppo/play.py --checkpoint models/ppo_run_YYYYMMDD_HHMMSS/best.pt --config game_config.yaml
 ```
 
 Opciones útiles:

@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 import argparse
+import os
+import sys
 import time
 from typing import List, Optional, Sequence, Tuple
 
 import cv2
 import numpy as np
 import torch
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 from bc.model import BCPolicyNet
 from doom_controller import DoomController
@@ -120,7 +126,15 @@ def main() -> None:
         if isinstance(loaded, list) and len(loaded) == len(button_names):
             action_thresholds = [float(t) for t in loaded]
 
-    model = BCPolicyNet(num_actions=len(button_names))
+    model = BCPolicyNet(
+        num_actions=len(button_names),
+        mobilenet_model_name=str(payload.get("mobilenet_model_name", "mobilenetv4_conv_small.e2400_r224_in1k")),
+        yolo_model_name=str(payload.get("yolo_model_name", "yolo26s.pt")),
+        yolo_imgsz=int(payload.get("yolo_imgsz", 320)),
+        yolo_conf=float(payload.get("yolo_conf", 0.25)),
+        yolo_max_det=int(payload.get("yolo_max_det", 10)),
+        use_yolo=bool(payload.get("use_yolo", True)),
+    )
     model.load_state_dict(payload["model_state_dict"])
     model.to(device)
     model.eval()

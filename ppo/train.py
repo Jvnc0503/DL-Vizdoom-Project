@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import random
+import sys
 import time
 from datetime import datetime
 from typing import Any, Dict, Optional
@@ -13,6 +14,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 from tqdm.auto import tqdm
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 from doom_controller import DoomController
 from ppo.model import PPOActorCritic, load_bc_weights_into_ppo
@@ -269,7 +274,7 @@ def main() -> None:
     parser.add_argument(
         "--scenario-configs",
         type=str,
-        default="/configs",
+        default="",
         help="Carpeta con configs .yaml/.yml para rotar escenarios durante entrenamiento (round-robin).",
     )
     parser.add_argument(
@@ -289,6 +294,12 @@ def main() -> None:
     parser.add_argument("--minibatch-size", type=int, default=256)
     parser.add_argument("--repeat", type=int, default=1, help="Tics por acción")
     parser.add_argument("--image-size", type=int, default=128)
+    parser.add_argument("--mobilenet-model-name", type=str, default="mobilenetv4_conv_small.e2400_r224_in1k")
+    parser.add_argument("--yolo-model-name", type=str, default="yolo26s.pt")
+    parser.add_argument("--yolo-imgsz", type=int, default=320)
+    parser.add_argument("--yolo-conf", type=float, default=0.25)
+    parser.add_argument("--yolo-max-det", type=int, default=10)
+    parser.add_argument("--disable-yolo", action="store_true")
 
     parser.add_argument("--gamma", type=float, default=0.99)
     parser.add_argument("--gae-lambda", type=float, default=0.95)
@@ -357,7 +368,15 @@ def main() -> None:
     armor_damage_penalty = float(reward_params["armor_damage_penalty"])
     use_reward_shaping = not bool(args.disable_reward_shaping)
 
-    model = PPOActorCritic(num_actions=num_actions).to(device)
+    model = PPOActorCritic(
+        num_actions=num_actions,
+        mobilenet_model_name=args.mobilenet_model_name,
+        yolo_model_name=args.yolo_model_name,
+        yolo_imgsz=args.yolo_imgsz,
+        yolo_conf=args.yolo_conf,
+        yolo_max_det=args.yolo_max_det,
+        use_yolo=not bool(args.disable_yolo),
+    ).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, eps=1e-5)
 
     resume_path = ""
@@ -449,6 +468,12 @@ def main() -> None:
                 "anneal_lr": bool(args.anneal_lr),
                 "repeat": int(args.repeat),
                 "image_size": int(args.image_size),
+                "mobilenet_model_name": str(args.mobilenet_model_name),
+                "yolo_model_name": str(args.yolo_model_name),
+                "yolo_imgsz": int(args.yolo_imgsz),
+                "yolo_conf": float(args.yolo_conf),
+                "yolo_max_det": int(args.yolo_max_det),
+                "use_yolo": bool(not args.disable_yolo),
                 "eval_every_updates": int(args.eval_every_updates),
                 "eval_episodes": int(args.eval_episodes),
                 "eval_max_steps": int(args.eval_max_steps),
@@ -767,6 +792,12 @@ def main() -> None:
                 "optimizer_state_dict": optimizer.state_dict(),
                 "button_names": button_names,
                 "image_size": int(args.image_size),
+                "mobilenet_model_name": str(args.mobilenet_model_name),
+                "yolo_model_name": str(args.yolo_model_name),
+                "yolo_imgsz": int(args.yolo_imgsz),
+                "yolo_conf": float(args.yolo_conf),
+                "yolo_max_det": int(args.yolo_max_det),
+                "use_yolo": bool(not args.disable_yolo),
                 "global_step": int(global_step),
                 "update": int(update),
                 "best_mean_ep_reward": float(best_mean_ep_reward),
