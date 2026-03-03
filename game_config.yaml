@@ -88,7 +88,7 @@ reward:
   death_penalty: -200    # penaliza fuertemente morir
 
   # Shaping rewards (señales intermedias)
-  kill_reward: 16.0        # recompensa por cada kill
+  kill_reward: 25.0        # recompensa por cada kill
   pickup_health: 12.0    # recompensa por recoger salud (normalizada por 25 HP)
   pickup_armor: 5.0      # recompensa por recoger armadura
   level_clear_bonus: 100.0  # recompensa por completar el nivel
