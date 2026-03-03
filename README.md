@@ -67,6 +67,41 @@ Grabar partida:
 python doom_play.py --config game_config.yaml --keymap keymap.yaml --record
 ```
 
+## Agente IA: Behavioral Cloning (Supervisado)
+
+El flujo recomendado es:
+1. Graba varias sesiones de calidad en `recordings/session_*/`.
+2. Entrena una política supervisada para predecir `action_bin` desde `screen`.
+3. Ejecuta el agente entrenado en Doom.
+
+### 1) Entrenar
+
+```bash
+python train_bc.py --recordings-dir recordings --output-dir models --epochs 12 --batch-size 64 --val-ratio 0.2
+```
+
+Esto crea una carpeta `models/bc_run_YYYYMMDD_HHMMSS/` con:
+- `best.pt`: mejor checkpoint por `val_loss`.
+- `last.pt`: último checkpoint.
+- `training_config.json`: metadatos de entrenamiento.
+
+### 2) Jugar con el agente entrenado
+
+```bash
+python play_bc.py --checkpoint models/bc_run_YYYYMMDD_HHMMSS/best.pt --config game_config.yaml
+```
+
+Opciones útiles:
+- `--threshold 0.5` para controlar activación de botones.
+- `--stochastic` para muestrear acciones en vez de usar umbral fijo.
+- `--max-steps 5000` para limitar la duración del episodio.
+
+### Notas técnicas
+
+- El entrenamiento usa `BCEWithLogitsLoss` para salida multi-etiqueta (acciones simultáneas).
+- El script de inferencia aplica resolución de conflictos básicos (ej. `TURN_LEFT` vs `TURN_RIGHT`).
+- Asegúrate de entrenar y jugar con el mismo orden de `controls.buttons` en `game_config.yaml`.
+
 ## Selección de WAD, mapa y dificultad
 La selección se hace en `game_config.yaml`, dentro de la sección `scenario`:
 

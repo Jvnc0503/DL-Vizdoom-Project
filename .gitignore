@@ -8,7 +8,8 @@ recordings/
 *.tar.gz
 *.7z
 *.log
-*.pdf
+class.pdf
+models/
 
 # WADs
 doom.wad
