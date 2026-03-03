@@ -12,6 +12,7 @@ class.pdf
 class2.pdf
 class3.pdf
 models/
+yolo26s.pt
 
 # WADs
 doom.wad

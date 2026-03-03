@@ -85,16 +85,16 @@ timing:
 reward:
   # Recompensas principales
   living_reward: -0.02    # penaliza quedarse parado; empuja a completar el mapa
-  death_penalty: -500    # penaliza fuertemente morir
+  death_penalty: -200    # penaliza fuertemente morir
 
   # Shaping rewards (señales intermedias)
-  kill_reward: 8.0        # recompensa por cada kill
+  kill_reward: 16.0        # recompensa por cada kill
   pickup_health: 12.0    # recompensa por recoger salud (normalizada por 25 HP)
   pickup_armor: 5.0      # recompensa por recoger armadura
-  level_clear_bonus: 250.0  # recompensa por completar el nivel
+  level_clear_bonus: 100.0  # recompensa por completar el nivel
 
   # Penalizaciones de eficiencia/supervivencia
-  ammo_spend_penalty: -0.04    # penalización por cada unidad de AMMO1..AMMO4 gastada (usa valores negativos)
+  ammo_spend_penalty: -0.1    # penalización por cada unidad de AMMO1..AMMO4 gastada (usa valores negativos)
   damage_taken_penalty: -0.2   # penalización por cada punto de HEALTH perdido (usa valores negativos)
   armor_damage_penalty: -0.05  # penalización por cada punto de ARMOR perdido (usa valores negativos)
 
