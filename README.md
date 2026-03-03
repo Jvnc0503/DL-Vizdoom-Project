@@ -102,6 +102,45 @@ Opciones útiles:
 - El script de inferencia aplica resolución de conflictos básicos (ej. `TURN_LEFT` vs `TURN_RIGHT`).
 - Asegúrate de entrenar y jugar con el mismo orden de `controls.buttons` en `game_config.yaml`.
 
+## Agente IA: PPO (Reinforcement Learning) con base BC
+
+Este flujo toma un modelo BC como punto de partida y luego lo optimiza con PPO en el entorno real.
+
+### 1) Fine-tuning PPO desde BC
+
+```bash
+python train_ppo.py --config game_config.yaml --bc-checkpoint models/bc_run_YYYYMMDD_HHMMSS/best.pt --output-dir models --total-timesteps 200000
+```
+
+Opciones útiles:
+- `--resume-latest` para continuar el último `ppo_run_*/last.pt`.
+- `--resume-from path/to/last.pt` para continuar desde un checkpoint específico.
+- `--save-every-updates 10` para checkpoints periódicos.
+- `--scenario-configs path/a/carpeta_configs` para rotar entre todos los `.yaml/.yml` de esa carpeta.
+- `--switch-every-timesteps 50000` para cambiar al siguiente escenario cada N timesteps.
+
+Ejemplo multi-escenario (round-robin):
+```bash
+python train_ppo.py --config game_config.yaml --scenario-configs scenario_configs --switch-every-timesteps 50000 --bc-checkpoint models/bc_run_YYYYMMDD_HHMMSS/best.pt --output-dir models --total-timesteps 300000
+```
+
+Esto crea una carpeta `models/ppo_run_YYYYMMDD_HHMMSS/` con:
+- `best.pt`: mejor checkpoint por recompensa media reciente.
+- `last.pt`: último checkpoint.
+- `checkpoints/update_XXXX.pt`: guardado periódico.
+- `training_config.json`: metadatos de entrenamiento.
+
+### 2) Ejecutar el agente PPO
+
+```bash
+python play_ppo.py --checkpoint models/ppo_run_YYYYMMDD_HHMMSS/best.pt --config game_config.yaml
+```
+
+Opciones útiles:
+- `--deterministic` para usar acciones determinísticas.
+- `--max-steps 5000` para limitar duración.
+- `--device cuda` para forzar GPU.
+
 ## Selección de WAD, mapa y dificultad
 La selección se hace en `game_config.yaml`, dentro de la sección `scenario`:
 

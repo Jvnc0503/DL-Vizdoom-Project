@@ -1,0 +1,89 @@
+from __future__ import annotations
+
+from typing import Dict, Tuple
+
+import torch
+import torch.nn as nn
+from torch.distributions import Bernoulli
+
+
+class PPOActorCritic(nn.Module):
+    def __init__(self, num_actions: int, in_channels: int = 3) -> None:
+        super().__init__()
+        self.num_actions = int(num_actions)
+
+        self.encoder = nn.Sequential(
+            nn.Conv2d(in_channels, 32, kernel_size=8, stride=4),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1),
+            nn.ReLU(inplace=True),
+            nn.AdaptiveAvgPool2d((1, 1)),
+            nn.Flatten(),
+        )
+
+        self.actor_head = nn.Sequential(
+            nn.Linear(64, 256),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.2),
+            nn.Linear(256, self.num_actions),
+        )
+        self.critic_head = nn.Sequential(
+            nn.Linear(64, 256),
+            nn.ReLU(inplace=True),
+            nn.Linear(256, 1),
+        )
+
+    def encode(self, x: torch.Tensor) -> torch.Tensor:
+        return self.encoder(x)
+
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        features = self.encode(x)
+        logits = self.actor_head(features)
+        value = self.critic_head(features).squeeze(-1)
+        return logits, value
+
+    def get_dist(self, logits: torch.Tensor) -> Bernoulli:
+        return Bernoulli(logits=logits)
+
+    def get_action_and_value(
+        self,
+        x: torch.Tensor,
+        action: torch.Tensor | None = None,
+        deterministic: bool = False,
+    ) -> Dict[str, torch.Tensor]:
+        logits, value = self.forward(x)
+        dist = self.get_dist(logits)
+
+        if action is None:
+            if deterministic:
+                action = (torch.sigmoid(logits) >= 0.5).float()
+            else:
+                action = dist.sample()
+
+        log_prob = dist.log_prob(action).sum(dim=1)
+        entropy = dist.entropy().sum(dim=1)
+
+        return {
+            "action": action,
+            "log_prob": log_prob,
+            "entropy": entropy,
+            "value": value,
+            "logits": logits,
+        }
+
+
+def load_bc_weights_into_ppo(ppo_model: PPOActorCritic, bc_state_dict: Dict[str, torch.Tensor]) -> None:
+    mapped: Dict[str, torch.Tensor] = {}
+
+    for key, tensor in bc_state_dict.items():
+        if key.startswith("encoder."):
+            mapped[key] = tensor
+            continue
+
+        if key.startswith("head."):
+            suffix = key[len("head.") :]
+            mapped[f"actor_head.{suffix}"] = tensor
+
+    ppo_model.load_state_dict(mapped, strict=False)

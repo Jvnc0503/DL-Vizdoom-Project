@@ -5,7 +5,7 @@ import json
 import os
 import random
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Sequence, Tuple
 
 import numpy as np
 import torch
@@ -53,7 +53,7 @@ def set_seed(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
-def compute_pos_weight(dataset: BCDataset) -> torch.Tensor:
+def compute_pos_weight(dataset: BCDataset, max_pos_weight: float = 30.0) -> torch.Tensor:
     counts = np.zeros((dataset.num_actions,), dtype=np.float64)
     total = len(dataset)
     for _, _, action in dataset.samples:
@@ -62,7 +62,61 @@ def compute_pos_weight(dataset: BCDataset) -> torch.Tensor:
     pos = counts
     neg = np.maximum(0.0, total - pos)
     weight = (neg + 1.0) / (pos + 1.0)
+    if max_pos_weight > 0:
+        weight = np.clip(weight, 0.0, max_pos_weight)
     return torch.tensor(weight, dtype=torch.float32)
+
+
+@torch.no_grad()
+def calibrate_action_thresholds(
+    model: nn.Module,
+    loader: DataLoader,
+    device: torch.device,
+    num_actions: int,
+    default_threshold: float,
+) -> list[float]:
+    model.eval()
+
+    probs_all: list[np.ndarray] = []
+    labels_all: list[np.ndarray] = []
+    for x, y in loader:
+        x = x.to(device)
+        logits = model(x)
+        probs = torch.sigmoid(logits).cpu().numpy().astype(np.float32)
+        probs_all.append(probs)
+        labels_all.append(y.cpu().numpy().astype(np.float32))
+
+    if not probs_all:
+        return [float(default_threshold)] * int(num_actions)
+
+    probs_mat = np.concatenate(probs_all, axis=0)
+    labels_mat = np.concatenate(labels_all, axis=0)
+    thresholds = np.full((num_actions,), float(default_threshold), dtype=np.float32)
+
+    candidates = np.linspace(0.1, 0.9, 17, dtype=np.float32)
+    for i in range(num_actions):
+        p = probs_mat[:, i]
+        y = labels_mat[:, i]
+        best_thr = float(default_threshold)
+        best_f1 = -1.0
+
+        for thr in candidates:
+            pred = (p >= thr).astype(np.float32)
+            tp = float(np.sum((pred == 1.0) & (y == 1.0)))
+            fp = float(np.sum((pred == 1.0) & (y == 0.0)))
+            fn = float(np.sum((pred == 0.0) & (y == 1.0)))
+
+            precision = tp / max(1.0, tp + fp)
+            recall = tp / max(1.0, tp + fn)
+            f1 = 2.0 * precision * recall / max(1e-8, precision + recall)
+
+            if f1 > best_f1:
+                best_f1 = f1
+                best_thr = float(thr)
+
+        thresholds[i] = best_thr
+
+    return thresholds.tolist()
 
 
 @torch.no_grad()
@@ -74,6 +128,7 @@ def evaluate(
     criterion: nn.Module,
     epoch: int,
     epochs: int,
+    action_thresholds: Optional[Sequence[float]] = None,
 ) -> Dict[str, float]:
     model.eval()
 
@@ -95,7 +150,11 @@ def evaluate(
         loss = criterion(logits, y)
 
         probs = torch.sigmoid(logits)
-        pred = (probs >= threshold).float()
+        if action_thresholds is not None and len(action_thresholds) > 0:
+            thr_t = torch.tensor(action_thresholds, dtype=probs.dtype, device=probs.device).unsqueeze(0)
+            pred = (probs >= thr_t).float()
+        else:
+            pred = (probs >= threshold).float()
 
         bsz = x.shape[0]
         total_loss += float(loss.item()) * bsz
@@ -173,6 +232,12 @@ def main() -> None:
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--threshold", type=float, default=0.5)
+    parser.add_argument(
+        "--max-pos-weight",
+        type=float,
+        default=30.0,
+        help="Clip superior para pos_weight en BCEWithLogitsLoss (<=0 desactiva clip).",
+    )
     parser.add_argument("--save-every", type=int, default=2, help="Guardar checkpoint cada N epochs (0 desactiva).")
     parser.add_argument(
         "--resume-from",
@@ -222,7 +287,7 @@ def main() -> None:
 
     model = BCPolicyNet(num_actions=train_ds.num_actions).to(device)
 
-    pos_weight = compute_pos_weight(train_ds).to(device)
+    pos_weight = compute_pos_weight(train_ds, max_pos_weight=float(args.max_pos_weight)).to(device)
     criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
@@ -262,6 +327,8 @@ def main() -> None:
         "button_names": train_ds.button_names,
         "image_size": int(args.image_size),
         "threshold": float(args.threshold),
+        "action_thresholds": None,
+        "max_pos_weight": float(args.max_pos_weight),
         "save_every": int(args.save_every),
         "epochs": int(args.epochs),
         "batch_size": int(args.batch_size),
@@ -278,6 +345,7 @@ def main() -> None:
 
     best_val_loss = float("inf")
     start_epoch = 1
+    calibrated_thresholds: Optional[list[float]] = None
 
     if resume_path:
         payload: Dict[str, Any] = torch.load(resume_path, map_location=device)
@@ -293,6 +361,9 @@ def main() -> None:
 
         best_val_loss = float(payload.get("best_val_loss", float("inf")))
         start_epoch = int(payload.get("epoch", 0)) + 1
+        loaded_action_thresholds = payload.get("action_thresholds", None)
+        if isinstance(loaded_action_thresholds, list) and len(loaded_action_thresholds) == train_ds.num_actions:
+            calibrated_thresholds = [float(t) for t in loaded_action_thresholds]
         print(f"[INFO] Se continuará desde epoch {start_epoch}")
 
     print(f"[INFO] Dispositivo: {device}")
@@ -310,7 +381,23 @@ def main() -> None:
 
         for epoch in range(start_epoch, args.epochs + 1):
             train_loss = train_epoch(model, train_loader, optimizer, device, criterion, epoch, args.epochs)
-            val_metrics = evaluate(model, val_loader, device, args.threshold, criterion, epoch, args.epochs)
+            calibrated_thresholds = calibrate_action_thresholds(
+                model=model,
+                loader=val_loader,
+                device=device,
+                num_actions=train_ds.num_actions,
+                default_threshold=float(args.threshold),
+            )
+            val_metrics = evaluate(
+                model,
+                val_loader,
+                device,
+                args.threshold,
+                criterion,
+                epoch,
+                args.epochs,
+                action_thresholds=calibrated_thresholds,
+            )
 
             print(
                 f"[Epoch {epoch:02d}/{args.epochs:02d}] "
@@ -325,6 +412,7 @@ def main() -> None:
                 "button_names": train_ds.button_names,
                 "image_size": int(args.image_size),
                 "threshold": float(args.threshold),
+                "action_thresholds": calibrated_thresholds,
                 "epoch": int(epoch),
                 "train_loss": float(train_loss),
                 "val_metrics": val_metrics,

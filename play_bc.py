@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import time
-from typing import List, Optional, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 import cv2
 import numpy as np
@@ -52,6 +52,7 @@ def _infer_action(
     image_size: int,
     button_names: List[str],
     threshold: float,
+    action_thresholds: Optional[Sequence[float]],
     device: torch.device,
     stochastic: bool,
 ) -> np.ndarray:
@@ -63,7 +64,11 @@ def _infer_action(
     if stochastic:
         action = (np.random.rand(probs.shape[0]) < probs).astype(np.int32)
     else:
-        action = (probs >= threshold).astype(np.int32)
+        if action_thresholds is not None and len(action_thresholds) == probs.shape[0]:
+            thr = np.asarray(action_thresholds, dtype=np.float32)
+            action = (probs >= thr).astype(np.int32)
+        else:
+            action = (probs >= threshold).astype(np.int32)
 
     action = _resolve_conflicts(action, probs, button_names)
     return action
@@ -109,6 +114,11 @@ def main() -> None:
     button_names: List[str] = list(payload["button_names"])
     image_size: int = int(payload.get("image_size", 128))
     threshold: float = float(payload.get("threshold", 0.5) if args.threshold is None else args.threshold)
+    action_thresholds: Optional[List[float]] = None
+    if args.threshold is None:
+        loaded = payload.get("action_thresholds", None)
+        if isinstance(loaded, list) and len(loaded) == len(button_names):
+            action_thresholds = [float(t) for t in loaded]
 
     model = BCPolicyNet(num_actions=len(button_names))
     model.load_state_dict(payload["model_state_dict"])
@@ -144,6 +154,7 @@ def main() -> None:
                 image_size=image_size,
                 button_names=button_names,
                 threshold=threshold,
+                action_thresholds=action_thresholds,
                 device=device,
                 stochastic=bool(args.stochastic),
             )

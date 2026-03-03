@@ -135,8 +135,11 @@ class StepResult:
 
 
 class DoomController:
-    def __init__(self, config_path: Optional[str] = None) -> None:
+    def __init__(self, config_path: Optional[str] = None, visible_window: Optional[bool] = None) -> None:
         self.cfg = _load_yaml_config(config_path)
+        if visible_window is not None:
+            self.cfg.setdefault("render", {})
+            self.cfg["render"]["visible_window"] = bool(visible_window)
 
         # Rutas y flags de grabación
         rec_cfg = self.cfg["recording"]
