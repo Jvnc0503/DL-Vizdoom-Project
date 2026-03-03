@@ -648,6 +648,9 @@ def main():
     pickup_health_reward = float(rew_cfg.get("pickup_health", 0.0))
     pickup_armor_reward = float(rew_cfg.get("pickup_armor", 0.0))
     level_clear_bonus = float(rew_cfg.get("level_clear_bonus", 0.0))
+    ammo_spend_penalty = float(rew_cfg.get("ammo_spend_penalty", 0.0))
+    damage_taken_penalty = float(rew_cfg.get("damage_taken_penalty", 0.0))
+    armor_damage_penalty = float(rew_cfg.get("armor_damage_penalty", 0.0))
 
     # Estado anterior de gamevariables para computar deltas
     prev_gv: Optional[Dict[str, float]] = None
@@ -722,6 +725,27 @@ def main():
                     delta_a = float(current_gv.get("ARMOR", 0.0) - prev_gv.get("ARMOR", 0.0))
                     if delta_a > 0:
                         shaping_extra += (delta_a / 25.0) * pickup_armor_reward
+
+                # Penalización por gasto de munición (caídas en AMMO1..AMMO4)
+                # Se aplica como coeficiente directo (esperado negativo en config)
+                ammo_used = 0.0
+                for ammo_key in ("AMMO1", "AMMO2", "AMMO3", "AMMO4"):
+                    if ammo_key in current_gv and ammo_key in prev_gv:
+                        ammo_used += max(0.0, float(prev_gv.get(ammo_key, 0.0) - current_gv.get(ammo_key, 0.0)))
+                if ammo_used > 0.0:
+                    shaping_extra += ammo_used * ammo_spend_penalty
+
+                # Penalización por recibir daño en salud/armadura
+                # Se aplica como coeficiente directo (esperado negativo en config)
+                if "HEALTH" in current_gv and "HEALTH" in prev_gv:
+                    health_lost = max(0.0, float(prev_gv.get("HEALTH", 0.0) - current_gv.get("HEALTH", 0.0)))
+                    if health_lost > 0.0:
+                        shaping_extra += health_lost * damage_taken_penalty
+
+                if "ARMOR" in current_gv and "ARMOR" in prev_gv:
+                    armor_lost = max(0.0, float(prev_gv.get("ARMOR", 0.0) - current_gv.get("ARMOR", 0.0)))
+                    if armor_lost > 0.0:
+                        shaping_extra += armor_lost * armor_damage_penalty
 
             # Aplicar shaping al reward del paso
             r = float(r) + shaping_extra

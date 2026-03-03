@@ -12,9 +12,9 @@ scenario:
   # scenarios/rocket_basic.wad
   # scenarios/simpler_basic.wad
   # scenarios/take_cover.wad
-  doom_scenario_path: "scenarios/doom.wad"   # Ajusta si usas otro WAD
-  doom_map: "e1m1"  # "e1m1" "map01"
-  doom_skill: 3                 # 1 I'm Too Young To Die (muy fácil)
+  doom_scenario_path: "scenarios/defend_the_center.wad"   # Ajusta si usas otro WAD
+  doom_map: "map01"  # "e1m1" "map01"
+  doom_skill: 2                 # 1 I'm Too Young To Die (muy fácil)
                                 # 2 Hey, Not Too Rough (fácil)
                                 # 3 Hurt Me Plenty (normal)
                                 # 4 Ultra-Violence (difícil)
@@ -92,6 +92,11 @@ reward:
   pickup_health: 12.0    # recompensa por recoger salud (normalizada por 25 HP)
   pickup_armor: 5.0      # recompensa por recoger armadura
   level_clear_bonus: 250.0  # recompensa por completar el nivel
+
+  # Penalizaciones de eficiencia/supervivencia
+  ammo_spend_penalty: -0.04    # penalización por cada unidad de AMMO1..AMMO4 gastada (usa valores negativos)
+  damage_taken_penalty: -0.2   # penalización por cada punto de HEALTH perdido (usa valores negativos)
+  armor_damage_penalty: -0.05  # penalización por cada punto de ARMOR perdido (usa valores negativos)
 
 recording:
   enable_lmp: false              # El script guarda su propio dataset; .lmp no es necesario
