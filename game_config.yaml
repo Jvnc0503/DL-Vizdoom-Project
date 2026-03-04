@@ -89,14 +89,15 @@ reward:
 
   # Shaping rewards (señales intermedias)
   kill_reward: 50.0        # recompensa por cada kill
-  pickup_health: 12.0    # recompensa por recoger salud (normalizada por 25 HP)
-  pickup_armor: 5.0      # recompensa por recoger armadura
+  pickup_health: 12.0    # coeficiente por cada punto de HEALTH ganado (usa signo libre)
+  pickup_armor: 5.0      # coeficiente por cada punto de ARMOR ganado (usa signo libre)
   level_clear_bonus: 100.0  # recompensa por completar el nivel
 
-  # Penalizaciones de eficiencia/supervivencia
-  ammo_spend_penalty: -0.1    # penalización por cada unidad de AMMO1..AMMO4 gastada (usa valores negativos)
-  damage_taken_penalty: -0.2   # penalización por cada punto de HEALTH perdido (usa valores negativos)
-  armor_damage_penalty: -0.05  # penalización por cada punto de ARMOR perdido (usa valores negativos)
+  # Coeficientes de eficiencia/supervivencia
+  # Todos se suman tal cual al reward final; el signo lo defines tú.
+  ammo_spend_penalty: -0.1    # por cada unidad de AMMO1..AMMO4 gastada
+  damage_taken_penalty: -0.2   # por cada punto de HEALTH perdido
+  armor_damage_penalty: -0.05  # por cada punto de ARMOR perdido
 
 recording:
   enable_lmp: false              # El script guarda su propio dataset; .lmp no es necesario

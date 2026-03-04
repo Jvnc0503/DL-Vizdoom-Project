@@ -170,6 +170,10 @@ class DoomController:
         self._hz: float = float(self.cfg["timing"].get("target_hz", 35))
         self._frame_skip_default: int = int(self.cfg["timing"].get("frame_skip", 4))
 
+        rew_cfg = self.cfg.get("reward", {})
+        self._living_reward_cfg: float = float(rew_cfg.get("living_reward", 0.0))
+        self._death_reward_cfg: float = float(rew_cfg.get("death_penalty", 0.0))
+
     # Game initialization -----------------------------------------------------------------------------
     def _init_game_from_config(self) -> None:
         scn = self.cfg["scenario"]
@@ -219,9 +223,12 @@ class DoomController:
         self.game.set_available_buttons(self._buttons)
         self.game.set_available_game_variables(self._gamevars)
 
-        # Recompensas simples
-        self.game.set_living_reward(float(rew.get("living_reward", 0.0)))
-        self.game.set_death_penalty(float(rew.get("death_penalty", 0.0)))
+        # Recompensas base del engine en 0.0 para evitar semántica implícita
+        # (p. ej. death_penalty como magnitud positiva).
+        # Aplicamos living/death manualmente en step() como suma directa,
+        # respetando exactamente el signo configurado en YAML.
+        self.game.set_living_reward(0.0)
+        self.game.set_death_penalty(0.0)
 
         # Modo: jugador sincrónico por defecto (paso a paso)
         self.game.set_mode(Mode.PLAYER)
@@ -294,6 +301,9 @@ class DoomController:
         reward = float(self.game.make_action(buttons_vec, frame_repeat))
         self._tic_counter += frame_repeat
 
+        if self._living_reward_cfg != 0.0:
+            reward += float(frame_repeat) * self._living_reward_cfg
+
         # Construir observación (o fallback si terminó)
         if self.game.is_episode_finished():
             obs = self._last_obs if self._last_obs is not None else self._build_obs(fallback_if_finished=True)
@@ -302,6 +312,25 @@ class DoomController:
             obs = self._build_obs()
             self._last_obs = obs
             terminated = False
+
+        if terminated and self._death_reward_cfg != 0.0:
+            is_dead = False
+            try:
+                is_dead = bool(self.game.is_player_dead())
+            except Exception:
+                is_dead = False
+
+            if not is_dead:
+                gvs = obs.get("gamevariables", None)
+                if isinstance(gvs, np.ndarray) and "HEALTH" in self._gamevar_names:
+                    try:
+                        h_idx = self._gamevar_names.index("HEALTH")
+                        is_dead = float(gvs.reshape(-1)[h_idx]) <= 0.0
+                    except Exception:
+                        is_dead = False
+
+            if is_dead:
+                reward += self._death_reward_cfg
 
         # Reglas de truncation por tiempo real
         trunc = False

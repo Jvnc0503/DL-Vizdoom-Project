@@ -718,16 +718,15 @@ def main():
                 if "HEALTH" in current_gv and "HEALTH" in prev_gv:
                     delta_h = float(current_gv.get("HEALTH", 0.0) - prev_gv.get("HEALTH", 0.0))
                     if delta_h > 0:
-                        # Normalizamos por 25 HP para que pickups pequeños no exploten
-                        shaping_extra += (delta_h / 25.0) * pickup_health_reward
+                        shaping_extra += delta_h * pickup_health_reward
                 # Armor pickups
                 if "ARMOR" in current_gv and "ARMOR" in prev_gv:
                     delta_a = float(current_gv.get("ARMOR", 0.0) - prev_gv.get("ARMOR", 0.0))
                     if delta_a > 0:
-                        shaping_extra += (delta_a / 25.0) * pickup_armor_reward
+                        shaping_extra += delta_a * pickup_armor_reward
 
-                # Penalización por gasto de munición (caídas en AMMO1..AMMO4)
-                # Se aplica como coeficiente directo (esperado negativo en config)
+                # Gasto de munición (caídas en AMMO1..AMMO4)
+                # Coeficiente aplicado por suma directa con el signo que definas.
                 ammo_used = 0.0
                 for ammo_key in ("AMMO1", "AMMO2", "AMMO3", "AMMO4"):
                     if ammo_key in current_gv and ammo_key in prev_gv:
@@ -735,8 +734,8 @@ def main():
                 if ammo_used > 0.0:
                     shaping_extra += ammo_used * ammo_spend_penalty
 
-                # Penalización por recibir daño en salud/armadura
-                # Se aplica como coeficiente directo (esperado negativo en config)
+                # Daño recibido en salud/armadura
+                # Coeficiente aplicado por suma directa con el signo que definas.
                 if "HEALTH" in current_gv and "HEALTH" in prev_gv:
                     health_lost = max(0.0, float(prev_gv.get("HEALTH", 0.0) - current_gv.get("HEALTH", 0.0)))
                     if health_lost > 0.0:
