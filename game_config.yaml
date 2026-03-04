@@ -12,7 +12,7 @@ scenario:
   # scenarios/rocket_basic.wad
   # scenarios/simpler_basic.wad
   # scenarios/take_cover.wad
-  doom_scenario_path: "scenarios/defend_the_center.wad"   # Ajusta si usas otro WAD
+  doom_scenario_path: "scenarios/deadly_corridor.wad"   # Ajusta si usas otro WAD
   doom_map: "map01"  # "e1m1" "map01"
   doom_skill: 2                 # 1 I'm Too Young To Die (muy fácil)
                                 # 2 Hey, Not Too Rough (fácil)
@@ -88,7 +88,7 @@ reward:
   death_penalty: -200    # penaliza fuertemente morir
 
   # Shaping rewards (señales intermedias)
-  kill_reward: 25.0        # recompensa por cada kill
+  kill_reward: 50.0        # recompensa por cada kill
   pickup_health: 12.0    # recompensa por recoger salud (normalizada por 25 HP)
   pickup_armor: 5.0      # recompensa por recoger armadura
   level_clear_bonus: 100.0  # recompensa por completar el nivel
